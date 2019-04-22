@@ -29,9 +29,10 @@ public class TspByGenetico {
         }; 
     
     public TspByGenetico(){
-        int x = 1000;
+        //long x = 10000000000;
         int k = 0;
-        //Iniciamos 4 tours aleatorios
+        int x = 1000000;
+        //Iniciamos4 tours aleatorios
         for(int i=0; i<4; i++)
             tourAleatorio(i);
         //for(int i=0;i<4;i++) mostrarArray(i);
@@ -40,27 +41,40 @@ public class TspByGenetico {
         
         int nueva_distancia; 
         System.out.println("");
-        while(k<4){
-            //ordenarTours();
+        while(k<x){
+            ordenarTours();
             nueva_distancia = distanciaTour(0);
             if(nueva_distancia < dist_mejorTour){
+                
+                dist_mejorTour = nueva_distancia;
+                //mejorTour va a tomar la primera posicion de Tour ya que hasta ahora es la mejor
                 for(int i=0; i<N-1; i++){
                     mejorTour[i] = tours[0][i];
                 }
-                dist_mejorTour = nueva_distancia;
             }
-            for(int i=0;i<4;i++) mostrarArray(i);
-            System.out.println("");
+            //Para mostrar las matrices en orden
+            //for(int i=0;i<4;i++) mostrarArray(i);
+            //System.out.println("");
                 
             tours = nuevaDescendencia();
-            //System.out.println(nueva_distancia);
+            //dentro de nuevaDecendencia() agregue la posibilidad de mutacion
             
             k++;
         }
-        //System.out.println(dist_mejorTour);
+        System.out.println("Mejor Tour Encontrado:");
+        mostrarRuta(mejorTour);
+        System.out.println("");
+        System.out.println("distancia: "+dist_mejorTour);
         
         
     
+    }
+    public void mostrarRuta(int[] ruta){
+        System.out.print("["+0+"]-->");
+        for(int i=0; i<ruta.length; i++){
+            System.out.print("["+ruta[i]+"]-->");
+        }
+        System.out.print("["+0+"]");
     }
     public int distanciaMejotTour(int[]mejorTour ){
         int dist = 0;
@@ -89,7 +103,7 @@ public class TspByGenetico {
         int t_des = 0;
         int t1 = 0;
         int t2 = 1;
-        int puntoCruce;
+        int puntoCruce1,puntoCruce2;
         int[][] descendencia = new int[4][N-1];
         ArrayList<Integer> fragmento1 = new ArrayList<>();
         ArrayList<Integer> fragmento2 = new ArrayList<>();
@@ -115,15 +129,39 @@ public class TspByGenetico {
             for(int i=0; i<N-1; i++){
                  descendencia[t_des][i] = tours[t2][i];
             }
-            puntoCruce = (int) (Math.random() * 9) + 4;
+            int aux;
+            puntoCruce1 = (int) (Math.random() * N-1);
+            puntoCruce2 = (int) (Math.random() * N-1);
+            while(puntoCruce2 == puntoCruce1){//aseguramos que sean distintos
+                puntoCruce2 = (int) (Math.random() * N-1);
+            }
+            if(puntoCruce2 < puntoCruce1){//para que el pc1 sea menor a pc2
+                aux = puntoCruce1;
+                puntoCruce1 = puntoCruce2;
+                puntoCruce2 = aux;
+                
+            }
             //obtengo los fragmentos de cada tour
-            for(int i=0; i<puntoCruce; i++){
+            for(int i=puntoCruce1; i<puntoCruce2; i++){
                 fragmento1.add(tours[t1][i]);
 
             }
+            //aumento o disminuyo puntos de cruce
+            int r = (int) (Math.random() * 1);
+            int aumento;
+            if(r ==0){//izquierda
+                aumento = (int) (Math.random() * puntoCruce1);
+                puntoCruce1 = puntoCruce1 - aumento;
+                puntoCruce2 = puntoCruce2 - aumento;
+            }
+            else{
+                aumento = (int) (Math.random() * N-1-puntoCruce2);
+                puntoCruce1 = puntoCruce1 + aumento;
+                puntoCruce2 = puntoCruce2 + aumento;
+            }
             boolean distintoTodos=true;
-            for(int i=0; i<puntoCruce; i++){
-                for(int j=0; j<puntoCruce; j++){
+            for(int i=puntoCruce1; i<puntoCruce2; i++){
+                for(int j=0; j<fragmento1.size(); j++){
                     if(tours[t2][i]== fragmento1.get(j))
                         distintoTodos = false;
                 }
@@ -131,13 +169,16 @@ public class TspByGenetico {
                     fragmento2.add(tours[t2][i]);
                 distintoTodos =true;
             }
+            
             //le pego a t2 el fragmento 1
-            for(int i=0; i< puntoCruce; i++){
+            int i_frag1 =0;
+            for(int i=puntoCruce1; i< puntoCruce2; i++){
                 //tours[t2][i] = fragmento1.get(i);
-                descendencia[t_des][i] = fragmento1.get(i); 
+                descendencia[t_des][i] = fragmento1.get(i_frag1); 
+                i_frag1++;
             }
             //recorro todo el tour
-            for(int i=puntoCruce; i<N-1; i++){ //por cada gen
+            for(int i=0; i<puntoCruce1; i++){ //por cada gen
                 for(int j=0; j<fragmento1.size(); j++)//recorro los fragmentos
                     if(tours[t2][i] == fragmento1.get(j)){
                         indice_gen = (int) (Math.random() * fragmento2.size());
@@ -148,11 +189,41 @@ public class TspByGenetico {
                         fragmento1.remove(j);
                     }
             }
+            for(int i=puntoCruce2; i<N-1; i++){ //por cada gen
+                for(int j=0; j<fragmento1.size(); j++)//recorro los fragmentos
+                    if(tours[t2][i] == fragmento1.get(j)){
+                        indice_gen = (int) (Math.random() * fragmento2.size());
+
+                        //tours[t2][i] = fragmento2.get(indice_gen);
+                        descendencia[t_des][i] = fragmento2.get(indice_gen);
+                        fragmento2.remove(indice_gen);
+                        fragmento1.remove(j);
+                    }
+            }
+            //Probabilidad de mutacion
+            int prob_mutacion = (int) (Math.random() * 500);
+            int cromosoma,gen1,gen2;
+            int aux2;
+            if(prob_mutacion ==25){
+                //System.out.println("Muto :O");
+                //mutamos un cromosoma al azar
+                cromosoma = (int) (Math.random() * 3);
+                gen1 = (int) (Math.random() * 15);
+                gen2 = (int) (Math.random() * 15);
+                while(gen1 == gen2){//para que no sean iguales
+                    gen2 = (int) (Math.random() * 15);
+                }
+                aux2 = descendencia[cromosoma][gen2];
+                descendencia[cromosoma][gen2] =descendencia[cromosoma][gen1];
+                descendencia[cromosoma][gen1] = aux2;
+                
+            }
+            
             fragmento1.clear();
             fragmento2.clear();
-            /*for(int i=0; i<N-1; i++){
-                System.out.print(descendencia[t_des][i]+" ");
-            }*/
+            //for(int i=0; i<N-1; i++){
+                //System.out.print(descendencia[t_des][i]+" ");
+            //}
             t_des++;
             
         }
@@ -230,17 +301,6 @@ public class TspByGenetico {
 
     }
     
-    public void mostrar(){
-        
-        for (int i=0; i<4; i++){
-            System.out.print("[ ");
-            for (int j=0; j<N-1; j++){
-                System.out.print(tours[i][j]+" ");
-            }
-            System.out.print(" ]");
-            System.out.println();
-        }
-    }
     public static void main(String[] args) {
         TspByGenetico app = new TspByGenetico();
     }
